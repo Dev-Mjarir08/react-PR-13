@@ -14,17 +14,19 @@ const startServer = async () => {
   // Connect to Database
   await connectDB();
 
-  // Start HTTP Server Listener
-  server = app.listen(PORT, () => {
-    console.log(
-      '\x1b[36m%s\x1b[0m',
-      `Server is running in [${process.env.NODE_ENV || 'development'}] mode on port ${PORT}`
-    );
-  });
+  // Only start standalone HTTP server if not running in serverless environment
+  if (!process.env.VERCEL) {
+    server = app.listen(PORT, () => {
+      console.log(
+        '\x1b[36m%s\x1b[0m',
+        `Server is running in [${process.env.NODE_ENV || 'development'}] mode on port ${PORT}`
+      );
+    });
 
-  // Prevent socket hanging under high concurrency
-  server.keepAliveTimeout = 65000; // Slightly higher than typical ALB idle timeout (60s)
-  server.headersTimeout = 66000; // Must be greater than keepAliveTimeout
+    // Prevent socket hanging under high concurrency
+    server.keepAliveTimeout = 65000;
+    server.headersTimeout = 66000;
+  }
 };
 
 startServer();
@@ -37,7 +39,6 @@ const gracefulShutdown = (reason) => {
       console.log('Server closed. All in-flight requests completed.');
       process.exit(1);
     });
-    // Force shutdown after 30 seconds if connections don't drain
     setTimeout(() => {
       console.error('\x1b[31m%s\x1b[0m', 'Forced shutdown — connections did not drain within 30s.');
       process.exit(1);
@@ -59,7 +60,9 @@ process.on('uncaughtException', (err) => {
   gracefulShutdown('Uncaught Exception');
 });
 
-// Handle SIGTERM (sent by PM2, Docker, cloud platforms on deploy/restart)
+// Handle SIGTERM
 process.on('SIGTERM', () => {
   gracefulShutdown('SIGTERM received');
 });
+
+export default app;
