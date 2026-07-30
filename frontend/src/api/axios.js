@@ -1,8 +1,19 @@
 import axios from 'axios';
 
+const getNormalizedBaseUrl = () => {
+  const rawUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081/api/v1').trim();
+  if (/^https?:\/[^\/]/i.test(rawUrl)) {
+    return rawUrl.replace(/^(https?:\/)/i, '$1/');
+  }
+  if (!/^https?:\/\//i.test(rawUrl)) {
+    return `http://${rawUrl}`;
+  }
+  return rawUrl;
+};
+
 // Create a reusable Axios instance
 const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081/api/v1',
+  baseURL: getNormalizedBaseUrl(),
   timeout: 30000, // 30s timeout — prevents hung requests from consuming resources
   withCredentials: true, // Send cookies along with cross-origin requests
   headers: {
