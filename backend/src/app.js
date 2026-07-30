@@ -39,64 +39,42 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
 }));
 
-// 3. CORS Configuration & Universal Headers
+// 3. CORS Configuration
 const allowedOrigins = [
-  'https://react-pr-13-frontend.vercel.app',
   'http://localhost:5173',
   'http://localhost:3000',
+  'http://localhost:5174',
+  'https://react-pr-13-frontend.vercel.app',
   process.env.CLIENT_URL,
-].filter(Boolean).map(url => url.trim().replace(/\/+$/, ''));
-
-// Universal CORS Header Middleware (guarantees CORS headers even on 500/error responses)
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (origin) {
-    const cleanOrigin = origin.trim().replace(/\/+$/, '');
-    if (
-      allowedOrigins.includes(cleanOrigin) ||
-      cleanOrigin.endsWith('.vercel.app') ||
-      cleanOrigin.includes('localhost') ||
-      process.env.NODE_ENV !== 'production'
-    ) {
-      res.setHeader('Access-Control-Allow-Origin', cleanOrigin);
-    } else {
-      res.setHeader('Access-Control-Allow-Origin', cleanOrigin);
-    }
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
-  }
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-  next();
-});
-
-import mongoose from 'mongoose';
+].filter(Boolean).map((url) => url.trim().replace(/\/+$/, ''));
 
 const corsOptions = {
-  origin: true,
+  origin: (origin, callback) => {
+    // Allow non-browser requests (mobile apps, Postman, curl)
+    if (!origin) return callback(null, true);
+
+    const cleanOrigin = origin.trim().replace(/\/+$/, '');
+
+    const isAllowed =
+      allowedOrigins.includes(cleanOrigin) ||
+      allowedOrigins.includes('*') ||
+      cleanOrigin.endsWith('.vercel.app') ||
+      cleanOrigin.includes('localhost') ||
+      process.env.NODE_ENV !== 'production';
+
+    if (isAllowed) {
+      return callback(null, true);
+    }
+
+    return callback(null, true);
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
   optionsSuccessStatus: 200,
 };
-app.use(cors(corsOptions));
 
-// Database Readiness Check Middleware
-app.use((req, res, next) => {
-  if (req.path === '/' || req.path === '/api/v1/health') {
-    return next();
-  }
-  if (mongoose.connection.readyState !== 1) {
-    return res.status(503).json({
-      success: false,
-      message: 'Database connection is not ready. Please verify MONGODB_URI in Vercel environment variables and MongoDB Atlas Network Access IP Whitelist (0.0.0.0/0).',
-    });
-  }
-  next();
-});
+app.use(cors(corsOptions));
 
 // 4. Rate Limiting Middleware
 const limiter = rateLimit({
