@@ -73,6 +73,8 @@ app.use((req, res, next) => {
   next();
 });
 
+import mongoose from 'mongoose';
+
 const corsOptions = {
   origin: true,
   credentials: true,
@@ -81,6 +83,20 @@ const corsOptions = {
   optionsSuccessStatus: 200,
 };
 app.use(cors(corsOptions));
+
+// Database Readiness Check Middleware
+app.use((req, res, next) => {
+  if (req.path === '/' || req.path === '/api/v1/health') {
+    return next();
+  }
+  if (mongoose.connection.readyState !== 1) {
+    return res.status(503).json({
+      success: false,
+      message: 'Database connection is not ready. Please verify MONGODB_URI in Vercel environment variables and MongoDB Atlas Network Access IP Whitelist (0.0.0.0/0).',
+    });
+  }
+  next();
+});
 
 // 4. Rate Limiting Middleware
 const limiter = rateLimit({

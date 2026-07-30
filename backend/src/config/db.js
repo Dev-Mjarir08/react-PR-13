@@ -9,17 +9,14 @@ const connectDB = async () => {
     return;
   }
 
+  const mongoUri = process.env.MONGODB_URI;
+
+  if (!mongoUri) {
+    console.error('\x1b[31m%s\x1b[0m', 'Database Connection Warning: MONGODB_URI environment variable is not defined.');
+    return;
+  }
+
   try {
-    const mongoUri = process.env.MONGODB_URI;
-
-    if (!mongoUri) {
-      console.error('\x1b[31m%s\x1b[0m', 'Database Connection Error: MONGODB_URI environment variable is not defined.');
-      if (process.env.VERCEL) {
-        throw new Error('MONGODB_URI environment variable is not defined.');
-      }
-      process.exit(1);
-    }
-
     const connectionInstance = await mongoose.connect(mongoUri, {
       serverSelectionTimeoutMS: 5000,
     });
@@ -30,10 +27,6 @@ const connectDB = async () => {
     );
   } catch (error) {
     console.error('\x1b[31m%s\x1b[0m', `MongoDB database connection failed: ${error.message}`);
-    if (process.env.VERCEL) {
-      throw error;
-    }
-    process.exit(1);
   }
 };
 
