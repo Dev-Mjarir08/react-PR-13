@@ -24,6 +24,9 @@ import paymentRoutes from './routes/payment.routes.js';
 
 const app = express();
 
+// Trust reverse proxies (Vercel, Render, Heroku, Nginx) for rate limiting & IP extraction
+app.set('trust proxy', 1);
+
 // 1. Logger Middleware (Morgan)
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
@@ -32,27 +35,50 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 // 2. Security Middlewares
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+}));
 
-// 3. CORS Configuration
-const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
-  .split(',')
-  .map((url) => url.trim().replace(/\/+$/, ''));
+// 3. CORS Configuration & Universal Headers
+const allowedOrigins = [
+  'https://react-pr-13-frontend.vercel.app',
+  'http://localhost:5173',
+  'http://localhost:3000',
+  process.env.CLIENT_URL,
+].filter(Boolean).map(url => url.trim().replace(/\/+$/, ''));
+
+// Universal CORS Header Middleware (guarantees CORS headers even on 500/error responses)
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin) {
+    const cleanOrigin = origin.trim().replace(/\/+$/, '');
+    if (
+      allowedOrigins.includes(cleanOrigin) ||
+      cleanOrigin.endsWith('.vercel.app') ||
+      cleanOrigin.includes('localhost') ||
+      process.env.NODE_ENV !== 'production'
+    ) {
+      res.setHeader('Access-Control-Allow-Origin', cleanOrigin);
+    } else {
+      res.setHeader('Access-Control-Allow-Origin', cleanOrigin);
+    }
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
+  }
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  next();
+});
 
 const corsOptions = {
-  origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps, curl, or server-to-server)
-    if (!origin) return callback(null, true);
-    const cleanOrigin = origin.trim().replace(/\/+$/, '');
-    if (allowedOrigins.includes(cleanOrigin) || allowedOrigins.includes('*') || process.env.NODE_ENV !== 'production') {
-      callback(null, true);
-    } else {
-      callback(new Error(`CORS error: Origin ${origin} not allowed`));
-    }
-  },
+  origin: true,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  optionsSuccessStatus: 200,
 };
 app.use(cors(corsOptions));
 
