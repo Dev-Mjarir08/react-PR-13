@@ -1,6 +1,11 @@
 import axios from 'axios';
 
 const getNormalizedBaseUrl = () => {
+  // Use local backend when running locally in development mode
+  if (import.meta.env.DEV && typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    return 'http://localhost:8081/api/v1';
+  }
+
   const rawUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081/api/v1').trim();
   if (/^https?:\/[^\/]/i.test(rawUrl)) {
     return rawUrl.replace(/^(https?:\/)/i, '$1/');
