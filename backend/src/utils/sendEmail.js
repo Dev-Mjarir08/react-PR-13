@@ -27,15 +27,15 @@ const sendEmail = async ({ email, subject, html, text }) => {
     throw err;
   }
 
-  const senderEmail = (process.env.MAIL_FROM || process.env.EMAIL_FROM || process.env.SMTP_MAIL || process.env.EMAIL_USER || '').trim();
-  const senderName = (process.env.MAIL_FROM_NAME || process.env.EMAIL_FROM_NAME || 'MJ-Tech').trim();
+  const senderEmail = (process.env.EMAIL_FROM || process.env.SMTP_MAIL || process.env.EMAIL_USER || process.env.MAIL_FROM || '').trim();
+  const senderName = (process.env.EMAIL_FROM_NAME || process.env.MAIL_FROM_NAME || 'Croma Clone').trim();
 
   if (!senderEmail) {
     console.warn('⚠️ [EMAIL SERVICE] Warning: Sender email environment variable (EMAIL_FROM/SMTP_MAIL/EMAIL_USER) is not set.');
   }
 
   const mailOptions = {
-    from: `"${senderName}" <${senderEmail}>`,
+    from: senderEmail ? `"${senderName}" <${senderEmail}>` : `"${senderName}" <noreply@croma-clone.com>`,
     to: email.trim(),
     subject: subject.trim(),
     html: html,
