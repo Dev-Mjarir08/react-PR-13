@@ -39,34 +39,11 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
 }));
 
-// 3. CORS Configuration
-const allowedOrigins = [
-  'http://localhost:5173',
-  'http://localhost:3000',
-  'http://localhost:5174',
-  'https://react-pr-13-frontend.vercel.app',
-  process.env.CLIENT_URL,
-].filter(Boolean).map((url) => url.trim().replace(/\/+$/, ''));
-
+// 3. CORS Configuration - Dynamically allow requesting origin (supports Vercel previews & production)
 const corsOptions = {
   origin: (origin, callback) => {
-    // Allow non-browser requests (mobile apps, Postman, curl)
     if (!origin) return callback(null, true);
-
-    const cleanOrigin = origin.trim().replace(/\/+$/, '');
-
-    const isAllowed =
-      allowedOrigins.includes(cleanOrigin) ||
-      allowedOrigins.includes('*') ||
-      cleanOrigin.endsWith('.vercel.app') ||
-      cleanOrigin.includes('localhost') ||
-      process.env.NODE_ENV !== 'production';
-
-    if (isAllowed) {
-      return callback(null, true);
-    }
-
-    return callback(null, true);
+    return callback(null, origin);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
@@ -76,13 +53,13 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// 4. Rate Limiting Middleware
+// 4. Rate Limiting Middleware (Skip OPTIONS preflight requests)
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env.NODE_ENV === 'production' ? 100 : 10000, // High threshold in dev
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-  skip: () => process.env.NODE_ENV !== 'production', // Skip rate limiting in development
+  max: process.env.NODE_ENV === 'production' ? 100 : 10000,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => req.method === 'OPTIONS' || process.env.NODE_ENV !== 'production',
   message: {
     success: false,
     message: 'Too many requests from this IP, please try again after 15 minutes.',
@@ -90,13 +67,13 @@ const limiter = rateLimit({
 });
 app.use('/api', limiter);
 
-// Stricter rate limiter for authentication routes (brute-force protection)
+// Stricter rate limiter for authentication routes (brute-force protection, skip OPTIONS)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: process.env.NODE_ENV === 'production' ? 15 : 100,
   standardHeaders: true,
   legacyHeaders: false,
-  skip: () => process.env.NODE_ENV !== 'production', // Skip rate limiting in development
+  skip: (req) => req.method === 'OPTIONS' || process.env.NODE_ENV !== 'production',
   message: {
     success: false,
     message: 'Too many authentication attempts. Please try again after 15 minutes.',
