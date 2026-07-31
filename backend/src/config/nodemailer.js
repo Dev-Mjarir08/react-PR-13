@@ -4,9 +4,9 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // Sanitize & normalize configuration credentials
-const smtpUser = (process.env.EMAIL_USER || process.env.SMTP_MAIL || '').trim();
-const smtpPass = (process.env.EMAIL_PASS || process.env.SMTP_PASSWORD || '').trim();
-const smtpHost = (process.env.SMTP_HOST || 'smtp.gmail.com').trim();
+const smtpUser = (process.env.SMTP_USER || process.env.EMAIL_USER || process.env.SMTP_MAIL || '').trim();
+const smtpPass = (process.env.SMTP_PASS || process.env.EMAIL_PASS || process.env.SMTP_PASSWORD || '').trim();
+const smtpHost = (process.env.SMTP_HOST || 'smtp-relay.brevo.com').trim();
 const smtpPort = parseInt(process.env.SMTP_PORT || '587', 10);
 const isSecure = process.env.SMTP_SECURE === 'true' || smtpPort === 465;
 

@@ -27,8 +27,8 @@ const sendEmail = async ({ email, subject, html, text }) => {
     throw err;
   }
 
-  const senderEmail = (process.env.EMAIL_FROM || process.env.SMTP_MAIL || process.env.EMAIL_USER || '').trim();
-  const senderName = (process.env.EMAIL_FROM_NAME || 'Croma Clone').trim();
+  const senderEmail = (process.env.MAIL_FROM || process.env.EMAIL_FROM || process.env.SMTP_MAIL || process.env.EMAIL_USER || '').trim();
+  const senderName = (process.env.MAIL_FROM_NAME || process.env.EMAIL_FROM_NAME || 'MJ-Tech').trim();
 
   if (!senderEmail) {
     console.warn('⚠️ [EMAIL SERVICE] Warning: Sender email environment variable (EMAIL_FROM/SMTP_MAIL/EMAIL_USER) is not set.');
