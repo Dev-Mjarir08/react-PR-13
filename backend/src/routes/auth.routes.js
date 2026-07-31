@@ -12,7 +12,9 @@ import {
 
 const router = Router();
 
-// Public Routes
+// Public Routes & Health Checks
+router.get('/email/test', authController.testEmail);
+router.get('/test-email', authController.testEmail);
 router.post('/register', registerValidator, validate, authController.register);
 router.post('/admin/register', registerValidator, validate, authController.registerAdmin);
 router.post('/login', loginValidator, validate, authController.login);

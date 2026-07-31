@@ -11,6 +11,7 @@ import notFound from './middlewares/notFound.middleware.js';
 import errorHandler from './middlewares/error.middleware.js';
 import mongoSanitize from './middlewares/sanitize.middleware.js';
 import authRoutes from './routes/auth.routes.js';
+import authController from './controllers/auth/auth.controller.js';
 import userRoutes from './routes/user.routes.js';
 import categoryRoutes from './routes/category.routes.js';
 import productRoutes from './routes/product.routes.js';
@@ -125,7 +126,8 @@ app.use('/api/v1/banners', bannerRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/payments', paymentRoutes);
 
-// 7. Basic Uptime Health Checks
+// 7. Basic Uptime & Email Health Checks
+app.get('/api/v1/health/email', authController.testEmail);
 app.get('/api/v1/health', (req, res) => {
   res.status(200).json({
     success: true,
