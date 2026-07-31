@@ -117,8 +117,9 @@ class AuthController {
 
     const { user, resetToken } = await authService.generateResetToken(email);
 
-    // Construct reset URL
-    const resetUrl = `${req.protocol}://${req.get('host')}/api/v1/auth/reset-password/${resetToken}`;
+    // Construct reset URL pointing to frontend client application
+    const clientUrl = (process.env.CLIENT_URL || 'http://localhost:5173').replace(/\/+$/, '');
+    const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
 
     // Async mail dispatch
     emailService.sendForgotPasswordEmail(user.email, user.name, resetUrl).catch((err) => {
@@ -136,6 +137,10 @@ class AuthController {
   resetPassword = asyncHandler(async (req, res) => {
     const { token } = req.params;
     const { password } = req.body;
+
+    if (!password || password.length < 6) {
+      throw new ApiError(400, 'New password must be at least 6 characters long.');
+    }
 
     const user = await authService.resetUserPassword(token, password);
 
@@ -159,6 +164,10 @@ class AuthController {
 
     if (!oldPassword) {
       throw new ApiError(400, 'Current password is required.');
+    }
+
+    if (!newPassword || newPassword.length < 6) {
+      throw new ApiError(400, 'New password must be at least 6 characters long.');
     }
 
     const user = await authService.changeUserPassword(userId, oldPassword, newPassword);
@@ -231,7 +240,8 @@ class AuthController {
     }
 
     try {
-      const decoded = jwt.verify(rToken, process.env.JWT_REFRESH_SECRET);
+      const secret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'fallback_jwt_refresh_secret_key_123';
+      const decoded = jwt.verify(rToken, secret);
       const user = await User.findById(decoded.id).select('+refreshToken');
 
       if (!user || user.refreshToken !== rToken) {
