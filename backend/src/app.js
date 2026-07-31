@@ -128,6 +128,8 @@ app.use('/api/v1/payments', paymentRoutes);
 
 // 7. Basic Uptime & Email Health Checks
 app.get('/api/v1/health/email', authController.testEmail);
+app.get('/api/v1/email/test', authController.testEmail);
+app.get('/api/email/test', authController.testEmail);
 app.get('/api/v1/health', (req, res) => {
   res.status(200).json({
     success: true,
