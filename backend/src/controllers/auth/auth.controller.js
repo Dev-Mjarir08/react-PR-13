@@ -240,7 +240,9 @@ class AuthController {
     }
 
     try {
-      const secret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'fallback_jwt_refresh_secret_key_123';
+      const secret = (process.env.JWT_REFRESH_SECRET && process.env.JWT_REFRESH_SECRET.trim())
+        ? process.env.JWT_REFRESH_SECRET.trim()
+        : ((process.env.JWT_SECRET && process.env.JWT_SECRET.trim()) ? process.env.JWT_SECRET.trim() : 'fallback_jwt_refresh_secret_key_123');
       const decoded = jwt.verify(rToken, secret);
       const user = await User.findById(decoded.id).select('+refreshToken');
 

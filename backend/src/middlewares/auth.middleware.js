@@ -25,7 +25,9 @@ const protect = asyncHandler(async (req, res, next) => {
 
   try {
     // Verify token
-    const secret = process.env.JWT_SECRET || 'fallback_jwt_access_secret_key_123';
+    const secret = (process.env.JWT_SECRET && process.env.JWT_SECRET.trim())
+      ? process.env.JWT_SECRET.trim()
+      : 'fallback_jwt_access_secret_key_123';
     const decoded = jwt.verify(token, secret);
 
     // Fetch user and verify they exist and are active
